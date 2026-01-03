@@ -23,14 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  
-  ArrowLeft,
-  Key,
-  RefreshCw,
-  AlertTriangle,
-
-} from "lucide-react";
+import { ArrowLeft, Key, RefreshCw, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { createSecureShare } from "../actions/share";
 import { SecureCrypto } from "../../lib/crypto";
@@ -47,19 +40,18 @@ export default function CreatePage() {
 
   // Single recipient settings (when multiRecipient is false)
   const [singleRecipientSettings, setSingleRecipientSettings] = useState({
-  expirationTime: "30d",
-  maxViews: 0,
-  requirePassword: false,
-  password: "",
-});
-
+    expirationTime: "30d",
+    maxViews: 0,
+    requirePassword: false,
+    password: "",
+  });
 
   // Multi-recipient state
 
   const [isLoading, setIsLoading] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [error, setError] = useState("");
-  
+
   useEffect(() => {
     setIsClient(true);
   }, []);
@@ -71,53 +63,50 @@ export default function CreatePage() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (!isClient) return;
+    e.preventDefault();
+    if (!isClient) return;
 
-  if (!formData.content.trim()) {
-    setError("Please enter some content to share");
-    return;
-  }
-
-  setIsLoading(true);
-  setError("");
-
-  try {
-    const encryptionKey = await SecureCrypto.generateKey();
-    const keyString = await SecureCrypto.exportKey(encryptionKey);
-
-    const { encrypted, iv } = await SecureCrypto.encrypt(
-      formData.content,
-      encryptionKey
-    );
-
-    const result = await createSecureShare({
-      title: formData.title,
-      encryptedContent: encrypted,
-      iv,
-      expirationTime: singleRecipientSettings.expirationTime,
-      maxViews: singleRecipientSettings.maxViews,
-      requirePassword: singleRecipientSettings.requirePassword,
-      password: singleRecipientSettings.password,
-      linkType: "standard",
-    });
-
-    if (!result.success || !result.id) {
-      setError(result.error || "Failed to create secure share");
+    if (!formData.content.trim()) {
+      setError("Please enter some content to share");
       return;
     }
 
-    window.location.href =
-      `${window.location.origin}/view/${result.id}#${keyString}`;
-  } catch (err) {
-    console.error(err);
-    setError("Failed to create secure share. Please try again.");
-  } finally {
-    setIsLoading(false);
-  }
-};
+    setIsLoading(true);
+    setError("");
 
-             
+    try {
+      const encryptionKey = await SecureCrypto.generateKey();
+      const keyString = await SecureCrypto.exportKey(encryptionKey);
+
+      const { encrypted, iv } = await SecureCrypto.encrypt(
+        formData.content,
+        encryptionKey
+      );
+
+      const result = await createSecureShare({
+        title: formData.title,
+        encryptedContent: encrypted,
+        iv,
+        expirationTime: singleRecipientSettings.expirationTime,
+        maxViews: singleRecipientSettings.maxViews,
+        requirePassword: singleRecipientSettings.requirePassword,
+        password: singleRecipientSettings.password,
+        linkType: "standard",
+      });
+
+      if (!result.success || !result.id) {
+        setError(result.error || "Failed to create secure share");
+        return;
+      }
+
+      window.location.href = `${window.location.origin}/view/${result.id}#${keyString}`;
+    } catch (err) {
+      console.error(err);
+      setError("Failed to create secure share. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   if (!isClient) {
     return (
@@ -205,59 +194,58 @@ export default function CreatePage() {
               </div>
 
               {/* Expiration and Views - Always Visible */}
-              
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="expiration">Expiration Time</Label>
-                    <Select
-                      value={singleRecipientSettings.expirationTime}
-                      onValueChange={(value) =>
-                        setSingleRecipientSettings({
-                          ...singleRecipientSettings,
-                          expirationTime: value,
-                        })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="15m">15 minutes</SelectItem>
-                        <SelectItem value="1h">1 hour</SelectItem>
-                        <SelectItem value="24h">24 hours</SelectItem>
-                        <SelectItem value="7d">7 days</SelectItem>
-                        <SelectItem value="30d">30 days</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
 
-                  <div>
-                    <Label htmlFor="maxViews">Max Views</Label>
-                    <Select
-                      value={singleRecipientSettings.maxViews.toString()}
-                      onValueChange={(value) =>
-                        setSingleRecipientSettings({
-                          ...singleRecipientSettings,
-                          maxViews: parseInt(value),
-                        })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">
-                          1 view (burn after reading)
-                        </SelectItem>
-                        <SelectItem value="3">3 views</SelectItem>
-                        <SelectItem value="5">5 views</SelectItem>
-                        <SelectItem value="10">10 views</SelectItem>
-                        <SelectItem value="0">Unlimited views</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="expiration">Expiration Time</Label>
+                  <Select
+                    value={singleRecipientSettings.expirationTime}
+                    onValueChange={(value) =>
+                      setSingleRecipientSettings({
+                        ...singleRecipientSettings,
+                        expirationTime: value,
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="15m">15 minutes</SelectItem>
+                      <SelectItem value="1h">1 hour</SelectItem>
+                      <SelectItem value="24h">24 hours</SelectItem>
+                      <SelectItem value="7d">7 days</SelectItem>
+                      <SelectItem value="30d">30 days</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              
+
+                <div>
+                  <Label htmlFor="maxViews">Max Views</Label>
+                  <Select
+                    value={singleRecipientSettings.maxViews.toString()}
+                    onValueChange={(value) =>
+                      setSingleRecipientSettings({
+                        ...singleRecipientSettings,
+                        maxViews: parseInt(value),
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">
+                        1 view (burn after reading)
+                      </SelectItem>
+                      <SelectItem value="3">3 views</SelectItem>
+                      <SelectItem value="5">5 views</SelectItem>
+                      <SelectItem value="10">10 views</SelectItem>
+                      <SelectItem value="0">Unlimited views</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -318,7 +306,6 @@ export default function CreatePage() {
                 disabled={isLoading}
               >
                 {isLoading ? "Creating Secure Link..." : "Create Secure Link"}
-
               </Button>
             </form>
           </CardContent>
