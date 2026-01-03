@@ -165,19 +165,29 @@ function generateShareId(linkType: string = "standard"): string {
 
 function getExpirationTime(timeString: string): Date {
   const now = new Date()
+
   switch (timeString) {
     case "15m":
       return new Date(now.getTime() + 15 * 60 * 1000)
+
     case "1h":
       return new Date(now.getTime() + 60 * 60 * 1000)
+
     case "24h":
       return new Date(now.getTime() + 24 * 60 * 60 * 1000)
+
     case "7d":
       return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+
+    case "30d":
+      return new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) // ✅ FIX
+
     default:
+      // fallback safety (1 hour)
       return new Date(now.getTime() + 60 * 60 * 1000)
   }
 }
+
 
 async function storeData(key: string, data: ShareData, ttlSeconds: number): Promise<boolean> {
   log(`📦 Storing data with key: ${key}, ID: ${data.id}, TTL: ${ttlSeconds}s`)
