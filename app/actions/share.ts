@@ -7,9 +7,9 @@ import path from "path"
 
 // Logging utility
 const DEBUG_ENABLED = process.env.DEBUG_ENABLED || false
-const log = DEBUG_ENABLED ? console.log : () => {}
-const logError = DEBUG_ENABLED ? console.error : () => {}
-const logWarn = DEBUG_ENABLED ? console.warn : () => {}
+const log = DEBUG_ENABLED ? console.log : () => { }
+const logError = DEBUG_ENABLED ? console.error : () => { }
+const logWarn = DEBUG_ENABLED ? console.warn : () => { }
 
 // File-based storage as fallback (persists across server restarts)
 const STORAGE_DIR = path.join(process.cwd(), ".secure-shares")
@@ -383,7 +383,7 @@ export async function createSecureShare(data: {
       return { success: false, error: "Missing encrypted content or IV" }
     }
 
-    if (data.maxViews < 1 || data.maxViews > 100) {
+    if (data.maxViews < 0 || data.maxViews > 100) {
       logError("❌ Invalid max views count:", data.maxViews)
       return { success: false, error: "Invalid max views count" }
     }
@@ -476,7 +476,8 @@ export async function getSecureShare(id: string, password?: string) {
     log(`✅ Found share: ${share.id}, views: ${share.currentViews}/${share.maxViews}`)
 
     // Check if max views reached
-    if (share.currentViews >= share.maxViews) {
+    if (share.maxViews > 0 && share.currentViews >= share.maxViews) {
+
       log("⚠️ Max views reached, deleting share")
       await deleteData(key)
       return { success: false, error: "This share has reached its maximum view limit" }
@@ -499,10 +500,11 @@ export async function getSecureShare(id: string, password?: string) {
     log(`📈 Incremented view count to: ${share.currentViews}`)
 
     // If this was the last allowed view, delete the share
-    if (share.currentViews >= share.maxViews) {
+    if (share.maxViews > 0 && share.currentViews >= share.maxViews) {
       log("🗑️ Last view reached, deleting share")
       await deleteData(key)
-    } else {
+    }
+    else {
       // Update the share with new view count
       const expiresAt = new Date(share.expiresAt)
       const now = new Date()
