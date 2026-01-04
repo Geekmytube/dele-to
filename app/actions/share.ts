@@ -79,9 +79,12 @@ interface ShareData {
   expiresAt: string
   maxViews: number
   currentViews: number
-  requirePassword: boolean
-  passwordHash?: string
+  passwordHash: string
   createdAt: string
+  logoUrl: string
+  brochureEncrypted?: string
+  brochureIv?: string
+
 }
 
 interface FileStorage {
@@ -372,9 +375,12 @@ export async function createSecureShare(data: {
   iv: string
   expirationTime: string
   maxViews: number
-  requirePassword: boolean
-  password?: string
   linkType?: string
+  password: string
+  logoUrl: string
+  brochureEncrypted?: string
+  brochureIv?: string
+
 }) {
   log("🚀 Creating secure share with data:", {
     title: data.title,
@@ -382,7 +388,6 @@ export async function createSecureShare(data: {
     hasIv: !!data.iv,
     expirationTime: data.expirationTime,
     maxViews: data.maxViews,
-    requirePassword: data.requirePassword,
     linkType: data.linkType || "standard",
   })
 
@@ -419,8 +424,10 @@ export async function createSecureShare(data: {
       expiresAt: expiresAt.toISOString(),
       maxViews: data.maxViews,
       currentViews: 0,
-      requirePassword: data.requirePassword,
-      passwordHash: data.requirePassword && data.password ? hashPassword(data.password) : undefined,
+      passwordHash: hashPassword(data.password),
+      logoUrl: data.logoUrl,
+      brochureEncrypted: data.brochureEncrypted,
+      brochureIv: data.brochureIv,
       createdAt: now.toISOString(),
     }
 
@@ -494,16 +501,16 @@ export async function getSecureShare(id: string, password?: string) {
     }
 
     // Check password if required
-    if (share.requirePassword) {
-      if (!password) {
-        log("🔒 Password required but not provided")
-        return { success: false, error: "Password required" }
-      }
-      if (share.passwordHash !== hashPassword(password)) {
-        log("❌ Incorrect password provided")
-        return { success: false, error: "Incorrect password" }
-      }
+
+    if (!password) {
+      log("🔒 Password required but not provided")
+      return { success: false, error: "Password required" }
     }
+    if (share.passwordHash !== hashPassword(password)) {
+      log("❌ Incorrect password provided")
+      return { success: false, error: "Incorrect password" }
+    }
+
 
     // Increment view count
     share.currentViews++
@@ -536,7 +543,7 @@ export async function getSecureShare(id: string, password?: string) {
         expiresAt: share.expiresAt,
         maxViews: share.maxViews,
         currentViews: share.currentViews,
-        requirePassword: share.requirePassword,
+
       },
     }
   } catch (error) {
@@ -572,11 +579,12 @@ export async function getShareMetadata(id: string) {
       data: {
         id: share.id,
         title: share.title,
+        logoUrl: share.logoUrl,
         expiresAt: share.expiresAt,
         maxViews: share.maxViews,
         currentViews: share.currentViews,
-        requirePassword: share.requirePassword,
-      },
+      }
+      ,
     }
   } catch (error) {
     logError("❌ Error getting share metadata:", error)
