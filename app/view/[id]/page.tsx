@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Copy, Eye, Shield, AlertTriangle, Clock, Key } from "lucide-react";
+import { Copy, Eye, AlertTriangle, Clock } from "lucide-react";
 import Link from "next/link";
 import {
   getSecureShare,
@@ -22,7 +22,6 @@ import {
   testShareExists,
 } from "../../actions/share";
 import { SecureCrypto } from "../../../lib/crypto";
-import { AccessTips } from "@/components/access-tips";
 import { PasswordInput } from "@/components/password-input";
 
 interface SecureShare {
@@ -136,9 +135,8 @@ export default function ViewPage({ params }: { params: { id: string } }) {
           setError("Invalid or corrupted encryption key in URL");
         }
       } else {
-        setError(
-          "No encryption key found in URL. Make sure you're using the complete share link."
-        );
+        setError("Please open the complete link you received.");
+
       }
     }
   };
@@ -176,9 +174,8 @@ export default function ViewPage({ params }: { params: { id: string } }) {
           setDecryptedContent(decrypted);
           setShowContent(true);
         } catch (decryptError) {
-          setError(
-            "Failed to decrypt content. The encryption key may be incorrect or corrupted."
-          );
+          setError("Unable to open this content. Please check the password.");
+
         }
       } else {
         setError(result.error || "Failed to access secure share");
@@ -199,41 +196,41 @@ export default function ViewPage({ params }: { params: { id: string } }) {
   };
 
   const formatTimeRemaining = (expiresAt: string) => {
-  const now = new Date();
-  const expires = new Date(expiresAt);
-  const diffMs = expires.getTime() - now.getTime();
+    const now = new Date();
+    const expires = new Date(expiresAt);
+    const diffMs = expires.getTime() - now.getTime();
 
-  if (diffMs <= 0) return "Expired";
+    if (diffMs <= 0) return "Expired";
 
-  const totalSeconds = Math.floor(diffMs / 1000);
+    const totalSeconds = Math.floor(diffMs / 1000);
 
-  const days = Math.floor(totalSeconds / (24 * 3600));
-  const hours = Math.floor((totalSeconds % (24 * 3600)) / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
+    const days = Math.floor(totalSeconds / (24 * 3600));
+    const hours = Math.floor((totalSeconds % (24 * 3600)) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
 
-  // 1️⃣ Days + hours (30d, 7d, etc.)
-  if (days > 0) {
-    return hours > 0
-      ? `${days}d ${hours}h remaining`
-      : `${days}d remaining`;
-  }
+    // 1️⃣ Days + hours (30d, 7d, etc.)
+    if (days > 0) {
+      return hours > 0
+        ? `${days}d ${hours}h remaining`
+        : `${days}d remaining`;
+    }
 
-  // 2️⃣ Hours + minutes
-  if (hours > 0) {
-    return minutes > 0
-      ? `${hours}h ${minutes}m remaining`
-      : `${hours}h remaining`;
-  }
+    // 2️⃣ Hours + minutes
+    if (hours > 0) {
+      return minutes > 0
+        ? `${hours}h ${minutes}m remaining`
+        : `${hours}h remaining`;
+    }
 
-  // 3️⃣ Minutes only
-  if (minutes > 0) {
-    return `${minutes}m remaining`;
-  }
+    // 3️⃣ Minutes only
+    if (minutes > 0) {
+      return `${minutes}m remaining`;
+    }
 
-  // 4️⃣ Seconds only
-  return `${seconds}s remaining`;
-};
+    // 4️⃣ Seconds only
+    return `${seconds}s remaining`;
+  };
 
 
   if (!isClient) {
@@ -241,7 +238,7 @@ export default function ViewPage({ params }: { params: { id: string } }) {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p>Loading secure decryption...</p>
+          <p>Loading...</p>
         </div>
       </div>
     );
@@ -253,18 +250,12 @@ export default function ViewPage({ params }: { params: { id: string } }) {
         <div className="container mx-auto max-w-2xl py-16">
           <Card>
             <CardHeader>
-              <div className="flex justify-center mb-4">
-                <div className="p-3 bg-green-100 rounded-full">
-                  <Shield className="w-8 h-8 text-green-600" />
-                </div>
-              </div>
-              <CardTitle className="text-center">
-                {share.title || "Secure Content"}
+
+              <CardTitle className="text-center text-2xl font-semibold">
+                {share.title}
               </CardTitle>
-              <CardDescription className="text-center">
-                Content decrypted successfully using client-side AES-256
-                encryption
-              </CardDescription>
+
+
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-2 gap-4 text-sm">
@@ -285,7 +276,7 @@ export default function ViewPage({ params }: { params: { id: string } }) {
               </div>
 
               <div>
-                <Label>Decrypted Content</Label>
+
                 <div className="mt-2 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border dark:border-gray-700">
                   <div className="flex justify-between items-start gap-4">
                     <pre className="whitespace-pre-wrap font-mono text-sm flex-1 break-all text-gray-900 dark:text-gray-100">
@@ -307,29 +298,8 @@ export default function ViewPage({ params }: { params: { id: string } }) {
                 </div>
               </div>
 
-              <Alert>
-                <Key className="w-4 h-4" />
-                <AlertDescription>
-                  <strong>Security Notice:</strong> This content was decrypted
-                  locally in your browser. The server never had access to your
-                  unencrypted data or the decryption key.
-                </AlertDescription>
-              </Alert>
 
-              <Alert>
-                <AlertTriangle className="w-4 h-4" />
-                <AlertDescription>
-                  <strong>Important:</strong> This content has been viewed and
-                  may be automatically destroyed based on the expiration
-                  settings. Save it securely if needed.
-                </AlertDescription>
-              </Alert>
 
-              <div className="text-center">
-                <Link href="/create">
-                  <Button>Create Your Own Secure Share</Button>
-                </Link>
-              </div>
             </CardContent>
           </Card>
         </div>
@@ -342,22 +312,15 @@ export default function ViewPage({ params }: { params: { id: string } }) {
       <div className="container mx-auto max-w-md py-16">
         <Card>
           <CardHeader className="text-center">
-            <div className="flex justify-center mb-4">
-              <div className="p-3 bg-blue-100 rounded-full">
-                <Shield className="w-8 h-8 text-blue-600" />
-              </div>
-            </div>
-            <CardTitle>Access Secure Content</CardTitle>
-            <CardDescription>
-              {metadata?.title && `Accessing: ${metadata.title}`}
-              <br />
-              Share ID: {shareId}
-              <br />
-              Client-side decryption with AES-256
-            </CardDescription>
+
+            <CardTitle className="text-xl font-semibold">
+              {metadata?.title}
+            </CardTitle>
+
+
           </CardHeader>
           <CardContent>
-            <AccessTips />
+
 
             {metadata && (
               <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border dark:border-gray-700">
@@ -382,35 +345,28 @@ export default function ViewPage({ params }: { params: { id: string } }) {
             )}
 
             <form onSubmit={handleAccess} className="space-y-4">
-              {metadata?.requirePassword && (
-                <div>
-                  <Label htmlFor="password">Access Password</Label>
-                  <PasswordInput
-                    id="password"
-                    placeholder="Enter the required password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-              )}
+
+              <div>
+                <Label htmlFor="password">Password</Label>
+
+                <PasswordInput
+                  id="password"
+                  placeholder="Enter the required password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+
 
               {!encryptionKey && (
                 <Alert variant="destructive">
-                  <AlertTriangle className="w-4 h-4" />
                   <AlertDescription>
-                    No encryption key found in URL. Make sure you're using the
-                    complete share link including the fragment (#) part.
-                    <br />
-                    <br />
-                    <strong>Expected URL format:</strong>
-                    <br />
-                    <code className="text-xs">
-                      https://ardd.cloud/view/[id]#[encryption-key]
-                    </code>
+                    Please open the complete link you received.
                   </AlertDescription>
                 </Alert>
               )}
+
 
               {error && (
                 <Alert variant="destructive">
@@ -424,24 +380,14 @@ export default function ViewPage({ params }: { params: { id: string } }) {
                 className="w-full"
                 disabled={isLoading || !encryptionKey}
               >
-                {isLoading ? "Decrypting..." : "Access Content"}
+                {isLoading ? "Opening..." : "Open"}
+
               </Button>
             </form>
 
-            <Alert className="mt-4">
-              <Key className="w-4 h-4" />
-              <AlertDescription>
-                <strong>Zero-Knowledge:</strong> Decryption happens entirely in
-                your browser. The server never sees your encryption key or
-                decrypted content.
-              </AlertDescription>
-            </Alert>
 
-            <div className="mt-6 text-center">
-              <Link href="/create">
-                <Button variant="outline">Create Your Own Secure Share</Button>
-              </Link>
-            </div>
+
+
           </CardContent>
         </Card>
       </div>
