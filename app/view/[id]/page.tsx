@@ -33,6 +33,10 @@ interface SecureShare {
   maxViews: number;
   currentViews: number;
   requirePassword: boolean;
+  logoUrl?: string;
+  brochureEncrypted?: string;
+  brochureIv?: string;
+
 }
 
 interface ShareMetadata {
@@ -42,6 +46,7 @@ interface ShareMetadata {
   maxViews: number;
   currentViews: number;
   requirePassword: boolean;
+  logoUrl?: string;
 }
 
 export default function ViewPage({ params }: { params: { id: string } }) {
@@ -49,6 +54,7 @@ export default function ViewPage({ params }: { params: { id: string } }) {
   const [share, setShare] = useState<SecureShare | null>(null);
   const [metadata, setMetadata] = useState<ShareMetadata | null>(null);
   const [decryptedContent, setDecryptedContent] = useState<string>("");
+  const [brochureImage, setBrochureImage] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [showContent, setShowContent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -173,6 +179,15 @@ export default function ViewPage({ params }: { params: { id: string } }) {
 
           setDecryptedContent(decrypted);
           setShowContent(true);
+          if (shareData.brochureEncrypted && shareData.brochureIv) {
+            const decryptedImage = await SecureCrypto.decrypt(
+              shareData.brochureEncrypted,
+              encryptionKey,
+              shareData.brochureIv
+            );
+            setBrochureImage(decryptedImage);
+          }
+
         } catch (decryptError) {
           setError("Unable to open this content. Please check the password.");
 
@@ -248,15 +263,25 @@ export default function ViewPage({ params }: { params: { id: string } }) {
     return (
       <div className="min-h-screen p-4">
         <div className="container mx-auto max-w-2xl py-16">
+
+
           <Card>
             <CardHeader>
+              {share.logoUrl && (
+                <div className="flex justify-center mb-4">
+                  <img
+                    src={share.logoUrl}
+                    alt="Brand logo"
+                    className="h-12 object-contain"
+                  />
+                </div>
+              )}
 
               <CardTitle className="text-center text-2xl font-semibold">
                 {share.title}
               </CardTitle>
-
-
             </CardHeader>
+
             <CardContent className="space-y-6">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div className="flex items-center gap-2">
@@ -275,35 +300,41 @@ export default function ViewPage({ params }: { params: { id: string } }) {
                 </div>
               </div>
 
-              <div>
+              <div className="mt-2 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border dark:border-gray-700">
 
-                <div className="mt-2 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border dark:border-gray-700">
-                  <div className="flex justify-between items-start gap-4">
-                    <pre className="whitespace-pre-wrap font-mono text-sm flex-1 break-all text-gray-900 dark:text-gray-100">
-                      {decryptedContent}
-                    </pre>
-                    <Button
-                      onClick={copyToClipboard}
-                      variant="outline"
-                      size="sm"
-                    >
-                      <Copy className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  {copied && (
-                    <p className="text-sm text-green-600 mt-2">
-                      Copied to clipboard!
-                    </p>
-                  )}
+                <div className="flex justify-between items-start gap-4">
+                  <pre className="whitespace-pre-wrap font-mono text-sm flex-1 break-all text-gray-900 dark:text-gray-100">
+                    {decryptedContent}
+                  </pre>
+                  <Button onClick={copyToClipboard} variant="outline" size="sm">
+                    <Copy className="w-4 h-4" />
+                  </Button>
                 </div>
+                {copied && (
+                  <p className="text-sm text-green-600 mt-2">
+                    Copied to clipboard!
+                  </p>
+                )}
               </div>
-
-
+              {brochureImage && (
+                <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border dark:border-gray-700">
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-3">
+                    Attached brochure
+                  </p>
+                  <img
+                    src={brochureImage}
+                    alt="Attached brochure"
+                    className="max-w-full rounded-lg"
+                  />
+                </div>
+              )}
 
             </CardContent>
           </Card>
-        </div>
-      </div>
+
+        </div >
+
+      </div >
     );
   }
 
@@ -312,13 +343,21 @@ export default function ViewPage({ params }: { params: { id: string } }) {
       <div className="container mx-auto max-w-md py-16">
         <Card>
           <CardHeader className="text-center">
+            {metadata?.logoUrl && (
+              <div className="flex justify-center mb-4">
+                <img
+                  src={metadata.logoUrl}
+                  alt="Brand logo"
+                  className="h-12 object-contain"
+                />
+              </div>
+            )}
 
             <CardTitle className="text-xl font-semibold">
               {metadata?.title}
             </CardTitle>
-
-
           </CardHeader>
+
           <CardContent>
 
 
@@ -380,9 +419,9 @@ export default function ViewPage({ params }: { params: { id: string } }) {
                 className="w-full"
                 disabled={isLoading || !encryptionKey}
               >
-                {isLoading ? "Opening..." : "Open"}
-
+                {isLoading ? "Loading..." : "Access content"}
               </Button>
+
             </form>
 
 
