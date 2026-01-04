@@ -2,6 +2,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Lock, Eye, ArrowRight, Sparkles, Shield, Clock, Database, Zap, Github } from 'lucide-react'
 import Link from 'next/link'
+import { ProductSection } from '@/components/product-section'
+
 
 export default function HomePage() {
   return (
