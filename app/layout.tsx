@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
-import { Footer } from '@/components/footer'
 import { ThemeProvider } from '@/components/theme-provider'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { ConsoleMessage } from '@/components/console-message'
@@ -64,7 +63,6 @@ export default function RootLayout({
         >
           <ConsoleMessage />
           <main className="flex-1">{children}</main>
-          <Footer />
         </ThemeProvider>
       </body>
     </html>
