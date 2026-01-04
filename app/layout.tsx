@@ -2,8 +2,9 @@ import type { Metadata } from 'next'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import { ThemeProvider } from '@/components/theme-provider'
-import { ThemeToggle } from '@/components/theme-toggle'
 import { ConsoleMessage } from '@/components/console-message'
+import { Footer } from '@/components/footer'
+import { ThemeToggleWrapper } from '@/components/theme-toggle-wrapper'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -62,8 +63,17 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <ConsoleMessage />
-          <main className="flex-1">{children}</main>
+
+          <ThemeToggleWrapper />
+
+          <main className="flex-1">
+            {children}
+          </main>
+
+          <Footer />
         </ThemeProvider>
+
+
       </body>
     </html>
   )
