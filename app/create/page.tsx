@@ -32,6 +32,9 @@ export default function CreatePage() {
     title: "",
     content: "",
   });
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [brochureFile, setBrochureFile] = useState<File | null>(null);
+
 
   // Single recipient settings (when multiRecipient is false)
   const [singleRecipientSettings, setSingleRecipientSettings] = useState({
@@ -57,6 +60,60 @@ export default function CreatePage() {
     setSingleRecipientSettings({ ...singleRecipientSettings, password });
   };
 
+  const fileToBase64 = (file: File): Promise<string> => {
+
+
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const imageFileToCompressedBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      // Max size: 2MB
+      if (file.size > 2 * 1024 * 1024) {
+        reject(new Error("Image too large"));
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+
+          const MAX_WIDTH = 1000;
+          const scale = Math.min(1, MAX_WIDTH / img.width);
+
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            reject(new Error("Canvas error"));
+            return;
+          }
+
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+          const compressedBase64 = canvas.toDataURL("image/jpeg", 0.8);
+          resolve(compressedBase64);
+        };
+
+        img.onerror = reject;
+        img.src = reader.result as string;
+      };
+
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isClient) return;
@@ -66,17 +123,51 @@ export default function CreatePage() {
       return;
     }
 
+    if (!logoFile) {
+      setError("Company logo is required");
+      return;
+    }
+
+
     setIsLoading(true);
     setError("");
 
     try {
+      if (!logoFile) {
+        setError("Company logo is required");
+        return;
+      }
+
+      const logoBase64 = await fileToBase64(logoFile);
+
       const encryptionKey = await SecureCrypto.generateKey();
       const keyString = await SecureCrypto.exportKey(encryptionKey);
+
+      let brochureEncrypted: string | undefined;
+      let brochureIv: string | undefined;
+
+      if (brochureFile) {
+        try {
+          const brochureBase64 = await imageFileToCompressedBase64(brochureFile);
+          const encryptedBrochure = await SecureCrypto.encrypt(
+            brochureBase64,
+            encryptionKey
+          );
+          brochureEncrypted = encryptedBrochure.encrypted;
+          brochureIv = encryptedBrochure.iv;
+        } catch (err) {
+          setError("Brochure image too large. Please use an image under 2MB.");
+          setIsLoading(false);
+          return;
+        }
+      }
+
 
       const { encrypted, iv } = await SecureCrypto.encrypt(
         formData.content,
         encryptionKey
       );
+
 
       const result = await createSecureShare({
         title: formData.title,
@@ -86,7 +177,13 @@ export default function CreatePage() {
         maxViews: singleRecipientSettings.maxViews,
         password: singleRecipientSettings.password,
         linkType: "standard",
+        logoUrl: logoBase64,
+        brochureEncrypted,
+        brochureIv,
       });
+
+
+
 
       if (!result.success || !result.id) {
         setError(result.error || "Failed to create secure share");
@@ -103,15 +200,15 @@ export default function CreatePage() {
   };
 
   if (!isClient) {
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 mx-auto mb-4"></div>
-        <p>Loading...</p>
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 mx-auto mb-4"></div>
+          <p>Loading...</p>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
 
   return (
@@ -133,6 +230,21 @@ export default function CreatePage() {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
+
+            <div>
+              <Label htmlFor="logo">Company Logo *</Label>
+              <Input
+                id="logo"
+                type="file"
+                accept="image/*"
+                required
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) setLogoFile(file);
+                }}
+              />
+            </div>
+
 
             <div>
               <Label htmlFor="title">Title *</Label>
@@ -164,6 +276,18 @@ export default function CreatePage() {
               />
 
 
+            </div>
+            <div>
+              <Label htmlFor="brochure">Attach brochure (optional)</Label>
+              <Input
+                id="brochure"
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) setBrochureFile(file);
+                }}
+              />
             </div>
 
             {/* Expiration and Views - Always Visible */}
